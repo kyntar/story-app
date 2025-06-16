@@ -1,0 +1,19 @@
+Nama: Kyntar Barra Langit Lubis
+Email: fc012d5y1245@student.devacademy.id
+ID: FC012D5Y1245
+
+TEKNOLOGI YANG DIGUNAKAN
+========================
+
+1. API: Dicoding Story API (https://story-api.dicoding.dev/v1)
+2. Map Service: OpenStreetMap dengan Leaflet.js
+3. Arsitektur: Single Page Application (SPA) dengan MVP Pattern
+4. Routing: Hash-based routing
+5. API Peta: OpenStreetMap (Tidak memerlukan API key)
+
+MAP SERVICE YANG DIGUNAKAN
+==========================
+Service: OpenStreetMap dengan Leaflet.js
+URL Tiles: https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png
+API Key: Tidak diperlukan (OpenStreetMap gratis dan open source)
+Attribution: OpenStreetMap contributors
