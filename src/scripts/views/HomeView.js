@@ -10,9 +10,7 @@ export default class HomeView {
         this.loadingElement = document.getElementById('loading');
         this.mapContainer = document.getElementById('stories-map-container');
         this.map = null;
-        
-        // PERBAIKAN: Hapus pembuatan presenter dan service dari sini.
-        // View seharusnya hanya fokus pada DOM.
+    
         this.presenter = null; 
         this._setupEventListeners();
     }
@@ -93,7 +91,7 @@ export default class HomeView {
     }
     
     init() {
-        // Pastikan presenter sudah di-set sebelum memanggil metodenya
+        
         if (this.presenter) {
             this.presenter.show();
         } else {
@@ -101,7 +99,6 @@ export default class HomeView {
         }
     }
    _setupEventListeners() {
-    // --- LOGIKA HAPUS: MENDENGARKAN KLIK PADA TOMBOL HAPUS ---
     this.storiesContainer.addEventListener('click', (event) => {
       if (event.target.classList.contains('delete-button')) {
         const storyId = event.target.dataset.id;
