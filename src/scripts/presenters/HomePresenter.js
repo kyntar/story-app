@@ -1,100 +1,99 @@
 import DbHelper from '../utils/db-helper.js';
 
 export default class HomePresenter {
-  constructor(view, storyModel, mapService, userModel) {
-    this.view = view;
-    this.model = storyModel;
-    this.mapService = mapService;
-    this.userModel = userModel;
-  }
-
-  async show() {
-    this.view.transitionToPage(() => {
-      this.view.hideAllPages();
-      this.view.showPage();
-      this.view.updateNavigation('home');
-    });
-
-    if (this.userModel.isAuthenticated() && navigator.onLine) {
-      this.view.showMap();
-      this.initStoriesMap();
-    } else {
-      this.view.hideMap();
+    constructor(view, storyModel, mapService, userModel) {
+        this.view = view;
+        this.model = storyModel;
+        this.mapService = mapService;
+        this.userModel = userModel;
+        this.favoriteIds = new Set();
     }
 
-    await this.loadStories();
-  }
+    async show() {
+        this.view.transitionToPage(() => {
+            this.view.hideAllPages();
+            this.view.showPage();
+            this.view.updateNavigation('home');
+        });
 
-  async loadStories() {
-    this.view.showLoading();
-    try {
-      // Cek status koneksi
-      if (navigator.onLine) {
-        // --- LOGIKA ONLINE: MENYIMPAN DATA ---
-        console.log('Mode Online: Mengambil data dari API...');
-        const stories = await this.model.fetchStories();
-        
-        if (stories && stories.length > 0) {
-          // Simpan setiap cerita ke IndexedDB
-          for (const story of stories) {
-            await DbHelper.putStory(story);
-          }
-        }
-        this.view.renderStories(stories);
-      } else {
-        // --- LOGIKA OFFLINE: MENAMPILKAN DATA ---
-        console.log('Mode Offline: Mengambil data dari IndexedDB...');
-        const stories = await DbHelper.getAllStories();
-        
-        if (stories && stories.length > 0) {
-          this.view.renderStories(stories);
+        if (this.userModel.isAuthenticated() && navigator.onLine) {
+            this.view.showMap();
+            this.initStoriesMap();
         } else {
-          this.view.showError('Tidak ada data yang tersimpan untuk ditampilkan saat offline.');
+            this.view.hideMap();
         }
-      }
-    } catch (error) {
-      this.view.showError(`Gagal memuat cerita: ${error.message}`);
-    } finally {
-      this.view.hideLoading();
-    }
-  }
 
-  async handleDeleteStory(id) {
-    try {
-      await DbHelper.deleteStory(id);
-      alert('Cerita berhasil dihapus dari cache offline.');
-      await this.loadStories(); // Muat ulang cerita untuk memperbarui tampilan
-    } catch (error) {
-      alert('Gagal menghapus cerita dari cache.');
+        await this.loadStories();
     }
-  }
-  
+
+    async loadStories() {
+        this.view.showLoading();
+        try {
+            // PERBAIKAN: Selalu ambil data dari API jika online.
+            // Service Worker akan menyajikannya dari cache jika tersedia & sesuai strategi.
+            if (navigator.onLine) {
+                console.log('Online: Fetching stories from API...');
+                const stories = await this.model.fetchStories();
+                await this.loadFavorites(); // Muat ID favorit dari DB
+                this.view.renderStories(stories, this.favoriteIds);
+            } else {
+                this.view.showError('You are offline. Please check your connection. Your favorite stories are available on the Favorites page.');
+            }
+        } catch (error) {
+            this.view.showError(`Failed to load stories: ${error.message}`);
+        } finally {
+            this.view.hideLoading();
+        }
+    }
+
+    // BARU: Memuat daftar ID cerita favorit dari IndexedDB
+    async loadFavorites() {
+        const favoriteStories = await DbHelper.getAllStories();
+        this.favoriteIds = new Set(favoriteStories.map(story => story.id));
+    }
+
+    // PERBAIKAN: Logika untuk menambah/menghapus favorit
+    async handleToggleFavorite(id) {
+        try {
+            if (this.favoriteIds.has(id)) {
+                // Jika sudah favorit, hapus
+                await DbHelper.deleteStory(id);
+                alert('Story removed from favorites.');
+            } else {
+                // Jika belum, tambahkan
+                const storyToSave = this.model.getStoryById(id);
+                if (storyToSave) {
+                    await DbHelper.putStory(storyToSave);
+                    alert('Story added to favorites!');
+                }
+            }
+            // Muat ulang cerita untuk memperbarui tampilan tombol
+            await this.loadStories();
+        } catch (error) {
+            alert('Operation failed.');
+            console.error('Failed to toggle favorite:', error);
+        }
+    }
+    
     initStoriesMap() {
-        // Logika ini sekarang hanya berjalan jika user sudah login,
-        // karena pemanggilannya ada di dalam blok if (this.userModel.isAuthenticated())
         setTimeout(async () => {
             if (!this.view.isMapInitialized()) {
                 const map = this.mapService.initMap('stories-map');
                 this.view.setMap(map);
             }
             try {
-                // Ambil cerita lagi untuk menempatkan marker di peta.
                 const stories = await this.model.fetchStories();
                 stories.forEach(story => {
                     const lat = story.lat ?? story.latitude;
                     const lon = story.lon ?? story.longitude;
                     if (lat && lon) {
                         this.mapService.addMarker('stories-map', lat, lon, 
-                            `<div>
-                                <h4>${story.name || 'Story'}</h4>
-                                <p>${story.description || ''}</p>
-                                <small>${new Date(story.createdAt).toLocaleDateString('id-ID')}</small>
-                            </div>`
+                            `<div><h4>${story.name || 'Story'}</h4><p>${story.description.substring(0, 50)}...</p></div>`
                         );
                     }
                 });
             } catch (error) {
-                console.error('Error memuat cerita untuk peta:', error);
+                console.error('Error loading stories for map:', error);
             }
         }, 100);
     }

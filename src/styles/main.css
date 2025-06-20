@@ -1,5 +1,5 @@
 @import './utils/variables.css';
-@import './utils/mixins.css';
+/* @import './utils/mixins.css'; */
 
 @import './components/header.css';
 @import './components/story-card.css';
@@ -8,8 +8,6 @@
 
 /* CSS global lain bisa ditambahkan di sini */
 
-
-/* styles/main.css */
 * {
     margin: 0;
     padding: 0;
@@ -91,16 +89,19 @@ main {
     }
 }
 
-.delete-button {
-  background-color: #ef4444;
-  color: white;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 5px;
-  cursor: pointer;
-  margin-top: 10px;
-  font-size: 14px;
+/* PERBAIKAN: Mengganti .delete-button dengan .favorite-button */
+.favorite-button {
+    background-color: transparent;
+    border: 2px solid #ef4444;
+    color: #ef4444;
+    padding: 8px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    margin-top: 10px;
+    font-size: 14px;
+    transition: all 0.3s ease;
 }
-.delete-button:hover {
-  background-color: #dc2626;
+.favorite-button:hover, .favorite-button.favorited {
+    background-color: #ef4444;
+    color: white;
 }

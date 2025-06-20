@@ -1,5 +1,3 @@
-// src/scripts/views/HomeView.js
-
 import { transitionToPage } from '../utils/helpers.js';
 
 export default class HomeView {
@@ -10,14 +8,16 @@ export default class HomeView {
         this.loadingElement = document.getElementById('loading');
         this.mapContainer = document.getElementById('stories-map-container');
         this.map = null;
-    
         this.presenter = null; 
+        
         this._setupEventListeners();
     }
+
     setPresenter(presenter) {
         this.presenter = presenter;
     }
 
+    // PERBAIKAN: Menambahkan kembali metode yang hilang
     transitionToPage(callback) {
         transitionToPage(callback);
     }
@@ -49,26 +49,34 @@ export default class HomeView {
         this.loadingElement.style.display = 'none';
     }
 
-    renderStories(stories) {
-    if (!stories || stories.length === 0) {
-      this.storiesContainer.innerHTML = '<div class="card"><p>Tidak ada cerita untuk ditampilkan.</p></div>';
-      return;
+    renderStories(stories, favoriteIds = new Set()) {
+        if (!stories || stories.length === 0) {
+            this.storiesContainer.innerHTML = '<div class="card"><p>No stories to display.</p></div>';
+            return;
+        }
+        
+        this.storiesContainer.innerHTML = stories.map(story => {
+            const isFavorited = favoriteIds.has(story.id);
+            return `
+            <article class="story-card">
+              <img src="${story.photoUrl}" alt="Photo story by ${story.name}" class="story-image" loading="lazy">
+              <div class="story-content">
+                <h2 class="story-title">${story.name}</h2>
+                <p class="story-description">${story.description}</p>
+                <div class="story-meta">
+                  <span>${new Date(story.createdAt).toLocaleDateString('id-ID')}</span>
+                  ${story.lat && story.lon ? '<span>📍 Has Location</span>' : ''}
+                </div>
+                <button 
+                  class="favorite-button ${isFavorited ? 'favorited' : ''}" 
+                  data-id="${story.id}" 
+                  aria-label="${isFavorited ? 'Remove from favorites' : 'Add to favorites'}">
+                  ❤️ ${isFavorited ? 'Favorited' : 'Favorite'}
+                </button>
+              </div>
+            </article>`;
+        }).join('');
     }
-    // --- LOGIKA TAMPIL: MENAMPILKAN DATA & TOMBOL HAPUS ---
-    this.storiesContainer.innerHTML = stories.map(story => `
-      <article class="story-card">
-        <img src="${story.photoUrl}" alt="Foto cerita oleh ${story.name}" class="story-image" loading="lazy">
-        <div class="story-content">
-          <h3 class="story-title">${story.name}</h3>
-          <p class="story-description">${story.description}</p>
-          <div class="story-meta">
-            <span>${new Date(story.createdAt).toLocaleDateString('id-ID')}</span>
-            ${story.lat && story.lon ? '<span>📍 Punya Lokasi</span>' : ''}
-          </div>
-          <button class="delete-button" data-id="${story.id}" aria-label="Hapus cerita ${story.name} dari cache">Hapus dari Cache</button>
-        </div>
-      </article>`).join('');
-  }
 
     showError(message) {
         this.storiesContainer.innerHTML = `<div class="error">${message}</div>`;
@@ -91,22 +99,19 @@ export default class HomeView {
     }
     
     init() {
-        
         if (this.presenter) {
             this.presenter.show();
         } else {
             console.error("Presenter for HomeView has not been set.");
         }
     }
-   _setupEventListeners() {
-    this.storiesContainer.addEventListener('click', (event) => {
-      if (event.target.classList.contains('delete-button')) {
-        const storyId = event.target.dataset.id;
-        const confirmation = confirm('Apakah Anda yakin ingin menghapus cerita ini dari cache offline?');
-        if (confirmation) {
-          this.presenter.handleDeleteStory(storyId);
-        }
-      }
-    });
-  }
+
+    _setupEventListeners() {
+        this.storiesContainer.addEventListener('click', (event) => {
+            if (event.target.classList.contains('favorite-button')) {
+                const storyId = event.target.dataset.id;
+                this.presenter.handleToggleFavorite(storyId);
+            }
+        });
+    }
 }

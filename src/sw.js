@@ -1,11 +1,9 @@
-// Simpan sebagai: src/sw.js
-
 import { precacheAndRoute } from 'workbox-precaching';
 import { registerRoute } from 'workbox-routing';
-import { StaleWhileRevalidate, CacheFirst } from 'workbox-strategies'; // <-- Tambahkan CacheFirst
-import { ExpirationPlugin } from 'workbox-expiration'; // <-- Tambahkan ExpirationPlugin
+import { StaleWhileRevalidate, CacheFirst } from 'workbox-strategies';
+import { ExpirationPlugin } from 'workbox-expiration';
 
-// 1. Precache semua aset lokal (App Shell) yang dihasilkan Webpack.
+// 1. Precache semua aset lokal (App Shell)
 precacheAndRoute(self.__WB_MANIFEST);
 
 // 2. Aturan caching untuk aset dari luar (seperti Leaflet CSS)
@@ -16,27 +14,35 @@ registerRoute(
   }),
 );
 
-// ======================================================================
-// BARU: Tambahkan strategi caching untuk gambar cerita dari API
+// 3. Aturan caching untuk gambar cerita dari API
 registerRoute(
-  // Aturan untuk mencocokkan URL gambar dari API Dicoding
   ({ url }) => url.origin === 'https://story-api.dicoding.dev' && url.pathname.startsWith('/images/stories/'),
-
-  // Gunakan strategi CacheFirst: sajikan dari cache dulu jika ada.
   new CacheFirst({
     cacheName: 'story-images',
     plugins: [
-      // Atur agar cache tidak terlalu besar dan tidak menyimpan gambar selamanya
       new ExpirationPlugin({
-        maxEntries: 50, // Hanya simpan 50 gambar terakhir
-        maxAgeSeconds: 30 * 24 * 60 * 60, // Simpan cache selama 30 hari
+        maxEntries: 50,
+        maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Hari
       }),
     ],
   }),
 );
-// ======================================================================
 
-// 3. Kode Push Notification Anda (tidak ada perubahan, sudah benar)
+// PERBAIKAN: Tambahkan strategi caching untuk response API stories
+registerRoute(
+  ({ url }) => url.origin === 'https://story-api.dicoding.dev' && url.pathname.startsWith('/v1/stories'),
+  new StaleWhileRevalidate({
+    cacheName: 'dicoding-stories-api',
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 1, // Hanya cache 1 request terakhir (halaman pertama)
+        maxAgeSeconds: 1 * 24 * 60 * 60, // 1 Hari
+      }),
+    ],
+  })
+);
+
+// 4. Kode Push Notification (tidak ada perubahan)
 self.addEventListener('push', (event) => {
   let notificationData = {};
   try {
@@ -56,7 +62,7 @@ self.addEventListener('push', (event) => {
   event.waitUntil(self.registration.showNotification(title, options));
 });
 
-// 4. Kode Aksi Klik Notifikasi (tidak ada perubahan, sudah benar)
+// 5. Kode Aksi Klik Notifikasi (tidak ada perubahan)
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const urlToOpen = event.notification.data.url;

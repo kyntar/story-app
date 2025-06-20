@@ -1,3 +1,5 @@
+// PERBAIKAN: Menambahkan impor 'L' dari leaflet untuk memperbaiki bug
+import L from 'leaflet';
 import AddStoryPresenter from '../presenters/AddStoryPresenter.js';
 import ApiService from '../services/ApiService.js';
 import MapService from '../services/MapService.js';
@@ -25,6 +27,9 @@ export default class AddStoryView {
 
         this.map = null;
 
+        // PERBAIKAN: Instansiasi Service dan Presenter seharusnya dilakukan di main.js
+        // Namun untuk sementara kita biarkan agar tidak merusak struktur yang ada
+        // Idealnya, presenter akan di-set dari luar seperti pada HomeView
         this.apiService = new ApiService();
         this.mapService = new MapService();
         this.cameraService = new CameraService();
@@ -71,8 +76,7 @@ export default class AddStoryView {
     }
 
     onMapClick(callback) {
-        // Will be handled by mapService.onMapClick in presenter, no need to handle here
-        // This method is a placeholder for MVP completeness
+        // Will be handled by mapService.onMapClick in presenter
     }
 
     getCameraVideoElement() {
@@ -88,7 +92,6 @@ export default class AddStoryView {
     }
 
     toggleStartCaptureButtons(state) {
-        // states: 'initial', 'started', 'captured'
         switch (state) {
             case 'started':
                 this.startCameraBtn.style.display = 'none';
@@ -132,6 +135,7 @@ export default class AddStoryView {
 
     clearMapMarkers(map) {
         map.eachLayer(layer => {
+            // PERBAIKAN: Bug 'L is not defined' sudah teratasi dengan adanya import
             if (layer instanceof L.Marker) {
                 map.removeLayer(layer);
             }

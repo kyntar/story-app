@@ -9,11 +9,13 @@ TEKNOLOGI YANG DIGUNAKAN
     API Utama: Dicoding Story API (https://story-api.dicoding.dev/v1)
     Arsitektur: Single Page Application (SPA) dengan pola Model-View-Presenter (MVP)
     Module Bundler: Webpack
+
 Fitur PWA:
     Service Worker: Menggunakan Workbox untuk caching (App Shell & Runtime Caching) dan fungsionalitas offline.
     Penyimpanan Lokal: IndexedDB (dengan library idb) untuk menyimpan data cerita.
     Notifikasi: Web Push API untuk notifikasi.
     Routing: Hash-based routing.
+
 MAP SERVICE YANG DIGUNAKAN
     Service: OpenStreetMap dengan Leaflet.js
     URL Tiles: https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png

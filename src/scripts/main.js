@@ -1,4 +1,3 @@
-// src/scripts/main.js
 import '../styles/main.css';
 import NotificationHelper from './utils/notification-helper.js'; 
 import HomePresenter from './presenters/HomePresenter.js';
@@ -12,24 +11,33 @@ import MapService from './services/MapService.js';
 import AddStoryView from './views/AddStoryView.js';
 import HomeView from './views/HomeView.js';
 import AuthView from './views/AuthView.js';
-// console.log('✅ main.js loaded, aplikasi sengaja dikosongkan untuk tes.');
+
+// BARU: Impor untuk fitur Favorites
+import FavoriteView from './views/FavoriteView.js';
+import FavoritePresenter from './presenters/FavoritePresenter.js';
+
 // --- Inisialisasi Komponen Aplikasi ---
 const storyModel = new StoryModel();
 const userModel = new UserModel();
 const homeView = new HomeView();
 const addStoryView = new AddStoryView();
 const authView = new AuthView();
+const favoriteView = new FavoriteView(); // BARU
 const router = new Router();
 const mapService = new MapService();
 const cameraService = new CameraService();
+
 const homePresenter = new HomePresenter(homeView, storyModel, mapService, userModel);
 const addStoryPresenter = new AddStoryPresenter(addStoryView, storyModel, mapService, cameraService, router, userModel);
 const authPresenter = new AuthPresenter(authView, userModel, storyModel, router);
+const favoritePresenter = new FavoritePresenter(favoriteView); // BARU
 
 homeView.setPresenter(homePresenter);
+favoriteView.setPresenter(favoritePresenter); // BARU
 
 // --- Konfigurasi Rute ---
 router.addRoute('home', homePresenter);
+router.addRoute('favorites', favoritePresenter); // BARU
 router.addRoute('add-story', addStoryPresenter);
 router.addRoute('login', { show: () => authPresenter.showLogin() });
 router.addRoute('register', { show: () => authPresenter.showRegister() });
@@ -40,6 +48,7 @@ window.updateUI = function () {
   const isAuthenticated = userModel.isAuthenticated();
   const authLink = document.getElementById('auth-link');
   const addStoryLink = document.querySelector('a[href="#add-story"]');
+  const favoritesLink = document.querySelector('a[href="#favorites"]'); // BARU
 
   if (isAuthenticated) {
     const user = userModel.getCurrentUser();
@@ -48,18 +57,19 @@ window.updateUI = function () {
       authLink.href = '#logout';
     }
     if (addStoryLink) addStoryLink.parentElement.style.display = 'list-item';
+    if (favoritesLink) favoritesLink.parentElement.style.display = 'list-item'; // BARU
   } else {
     if (authLink) {
       authLink.textContent = 'Login';
       authLink.href = '#login';
     }
     if (addStoryLink) addStoryLink.parentElement.style.display = 'none';
+    if (favoritesLink) favoritesLink.parentElement.style.display = 'none'; // BARU
   }
 };
 
 // --- Event Listener Utama Aplikasi ---
 document.addEventListener('DOMContentLoaded', () => {
-  // Menangani semua klik pada link navigasi utama
   document.querySelectorAll('.nav-link').forEach((link) => {
     link.addEventListener('click', (e) => {
       const href = e.target.getAttribute('href');
@@ -70,7 +80,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Handler spesifik untuk tombol Login/Logout
   const authLink = document.getElementById('auth-link');
   if (authLink) {
     authLink.addEventListener('click', (e) => {
@@ -81,7 +90,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // PERBAIKAN: Inisialisasi Tombol Notifikasi
   const notificationButton = document.getElementById('notificationButton');
   if (notificationButton) {
     NotificationHelper.init({ button: notificationButton });
@@ -102,25 +110,11 @@ window.addEventListener('beforeunload', () => {
 });
 
 if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
-  // Blok ini HANYA akan berjalan saat `npm run build`
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
       .then(() => console.log('✅ Service Worker registered in production'))
       .catch((error) => console.log('Service Worker registration failed:', error));
   });
 } else {
-  // Blok ini akan berjalan saat `npm run dev`
-  console.log('Mode development: Service Worker sengaja tidak didaftarkan untuk menghindari flickering.');
-}
-
-function requestNotificationPermission() {
-  Notification.requestPermission().then(result => {
-    if (result === 'granted') {
-      console.log('✅ Izin notifikasi diberikan!');
-      // Lanjutkan ke langkah subscribe
-      subscribeToPushManager();
-    } else {
-      console.error('❌ Izin notifikasi ditolak.');
-    }
-  });
+  console.log('Development mode: Service Worker not registered.');
 }
